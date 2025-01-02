@@ -3,37 +3,38 @@ import bcrypt from "bcryptjs"
 import { createAccessToken } from "../libs/jwt.js"
 
 export const register = async (req, res) => {
-    const { username, email, password } = req.body
-
+    const { username, email, password } = req.body;
     try {
-        //Encrptacion de password
-        const passwordHash = await bcrypt.hash(password, 10)
+        // Encriptación de password
+        const passwordHash = await bcrypt.hash(password, 10);
 
         const newUser = new User({
             username,
             email,
-            password: passwordHash
-        })
+            password: passwordHash,
+        });
 
-        //Guardar en la base de datos
+        // Guardar en la base de datos
         const userSaved = await newUser.save();
-        const token = await createAccessToken({ id: userSaved._id });  //Validacion de token
 
-        res.cookie("token", token)
-        res.json({ //Respuesta 
+        // Validación de token
+        const token = await createAccessToken({ id: userSaved._id });
+
+        // Enviar cookie y respuesta al cliente
+        res.cookie("token", token);
+        return res.json({
             id: userSaved._id,
             username: userSaved.username,
             email: userSaved.email,
             createdAt: userSaved.createdAt,
-            updatedAt: userSaved.updatedAt
-        })
-
-        res.send("upload data", newUser)
+            updatedAt: userSaved.updatedAt,
+        });
     } catch (e) {
-        res.status(500).json({ message: 'error' })
-        console.log(e)
+        console.error(e);
+        return res.status(500).json({ message: "Error al registrar el usuario" });
     }
-}
+};
+
 
 export const login = async (req, res) => {
     const { email, password } = req.body
