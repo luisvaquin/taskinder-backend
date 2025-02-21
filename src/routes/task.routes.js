@@ -4,7 +4,13 @@ import { getTasks, getTask, createTask, deleteTask, updateTask } from "../contro
 import { validateSchema } from '../middlewares/validator.middleware.js';
 import { createTaskSchema } from '../auth/task.schema.js';
 
+
+
 const router = Router();
+
+router.get('/', (req, res) => {
+    res.status(200).json({ message: "Backend of taskinn" });
+});
 
 router.get('/tasks', authRequired, getTasks);
 router.get('/task/:id', authRequired, getTask);
