@@ -22,11 +22,11 @@ export const loginSchema = z.object({
     email: z.string({
         required_error: "Correo es requerido",
     }).email({
-        message: "Correo invalido para login",
+        message: "Correo invalido",
     }),
     password: z.string({
         required_error: "Contraseña es requerida",
     }).min(6, {
-        message: "La contraseña debe tener al menos 6 caracteres",
+        message: "Contraseña invalida",
     })
 })
