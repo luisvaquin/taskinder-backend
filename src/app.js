@@ -8,19 +8,25 @@ import taskRoutes from "./routes/task.routes.js";
 
 const app = express();
 
-const allowedOrigins = ["http://localhost:5173", "https://taskinn.netlify.app"];
+// Define las URLs permitidas para CORS
+const allowedOrigins = [
+  "http://localhost:5173", // Para el entorno local
+  "https://taskinn.netlify.app", // URL principal de producción
+  "https://taskinn.netlify.app/login", // Ruta específica de login
+  "https://taskinn.netlify.app/register", // Ruta específica de registro
+];
 
 // Middleware de CORS
 app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
+        callback(null, true); // Permite la solicitud
       } else {
-        callback(new Error("Not allowed by CORS"));
+        callback(new Error("Not allowed by CORS")); // Bloquea la solicitud
       }
     },
-    credentials: true,
+    credentials: true, // Permite el uso de cookies
   })
 );
 
@@ -40,8 +46,9 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Credentials", "true");
   }
 
+  // Si es una solicitud OPTIONS, se responde inmediatamente
   if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
+    return res.sendStatus(200); // Respuesta exitosa para las solicitudes OPTIONS
   }
 
   next();
@@ -58,6 +65,15 @@ app.use("/api", authRoutes);
 // Middleware para manejar rutas no encontradas
 app.use((req, res, next) => {
   res.status(404).json({ message: "ROUTE NOT FOUND" });
+});
+
+// Middleware de manejo de errores para CORS y otros errores
+app.use((err, req, res, next) => {
+  if (err.message === "Not allowed by CORS") {
+    return res.status(403).json({ error: "CORS error: Not allowed origin" });
+  }
+  // Si no es un error de CORS, procesamos el error genérico
+  res.status(500).json({ error: "Internal server error" });
 });
 
 export default app;
