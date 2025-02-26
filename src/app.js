@@ -10,7 +10,21 @@ const app = express();
 
 const allowedOrigins = ["http://localhost:5173", "https://taskinn.netlify.app"];
 
-// Middleware para configurar manualmente CORS
+// Middleware de CORS
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
+// Middleware para configurar manualmente CORS si Vercel ignora los headers
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -26,7 +40,6 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Credentials", "true");
   }
 
-  // Manejo de preflight request OPTIONS
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }
@@ -34,25 +47,17 @@ app.use((req, res, next) => {
   next();
 });
 
-// Middleware de CORS (por si Vercel ignora los headers manuales)
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
-
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(cookieParser());
 
+// Rutas
 app.use("/api", taskRoutes);
 app.use("/api", authRoutes);
+
+// Middleware para manejar rutas no encontradas
+app.use((req, res, next) => {
+  res.status(404).json({ message: "ROUTE NOT FOUND" });
+});
 
 export default app;
