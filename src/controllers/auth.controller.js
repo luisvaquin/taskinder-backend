@@ -44,40 +44,29 @@ export const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    console.time("findUser");
-    const userFound = await User.findOne({ email }); // Buscar correo en db
-    console.timeEnd("findUser");
-
+    const userFound = await User.findOne({ email }); //Buscar correo en db
     if (!userFound)
       return res.status(400).json({
-        message: "No se encontró el email",
+        message: "no se encontro el email",
       });
 
-    console.time("comparePassword");
+    //Comparacion de contraseña con usuario
     const isMatch = await bcrypt.compare(password, userFound.password);
-    console.timeEnd("comparePassword");
-
     if (!isMatch)
       return res.status(400).json({
         message: "Contraseña incorrecta",
       });
 
-    console.time("createToken");
-    const token = await createAccessToken({ id: userFound._id }); // Validación de token
-    console.timeEnd("createToken");
+    const token = await createAccessToken({ id: userFound._id }); //Validacion de token
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Solo enviar cookies en HTTPS en producción
-      sameSite: "strict",
-    });
-
+    res.cookie("token", token);
     res.json({
+      //Respuesta userFound de usuario encontrado
       message: "Login exitoso",
     });
   } catch (e) {
-    console.error("Error en login:", e);
-    res.status(500).json({ message: "Error interno del servidor" });
+    res.status(500).json({ message: error.message });
+    console.log(e);
   }
 };
 
