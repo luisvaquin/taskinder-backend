@@ -12,8 +12,6 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173", // Para el entorno local
   "https://taskinn.netlify.app", // URL principal de producción
-  "https://taskinn.netlify.app/login", // Ruta específica de login
-  "https://taskinn.netlify.app/register", // Ruta específica de registro
 ];
 
 // Middleware de CORS
@@ -29,30 +27,6 @@ app.use(
     credentials: true, // Permite el uso de cookies
   })
 );
-
-// Middleware para configurar manualmente CORS si Vercel ignora los headers
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader(
-      "Access-Control-Allow-Methods",
-      "GET, POST, PUT, DELETE, OPTIONS"
-    );
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization"
-    );
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-  }
-
-  // Si es una solicitud OPTIONS, se responde inmediatamente
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200); // Respuesta exitosa para las solicitudes OPTIONS
-  }
-
-  next();
-});
 
 app.use(morgan("dev"));
 app.use(express.json());
