@@ -32,7 +32,12 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(cookieParser());
 
-// Rutas
+// Ruta de inicio para mostrar un mensaje al acceder a la raíz
+app.get("/", (req, res) => {
+  res.status(200).json({ message: "Backend of taskinn" });
+});
+
+// Rutas de la API
 app.use("/api", taskRoutes);
 app.use("/api", authRoutes);
 
