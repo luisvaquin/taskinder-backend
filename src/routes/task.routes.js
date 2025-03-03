@@ -9,7 +9,7 @@ import { createTaskSchema } from '../auth/task.schema.js';
 const router = Router();
 
 router.get('/', (req, res) => {
-    res.status(200).json({ message: "Backend of taskinn" });
+    res.status(200).json({ message: "verificacion de rutas" });
 });
 
 router.get('/tasks', authRequired, getTasks);
