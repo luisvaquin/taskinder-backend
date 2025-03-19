@@ -65,6 +65,7 @@ export const login = async (req, res) => {
       message: "Login exitoso",
       message: { token },
     });
+
     console.log("Log exitoso", token);
   } catch (e) {
     res.status(500).json({ message: error.message });
