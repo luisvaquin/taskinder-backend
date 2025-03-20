@@ -61,7 +61,12 @@ export const login = async (req, res) => {
 
     const token = await createAccessToken({ id: userFound._id }); //Validacion de token
 
-    res.cookie("token", token);
+    res.cookie("token", token, {
+      sameSite: "none",
+      secure: true,
+      httpOnly: false,
+    });
+
     res.json({
       //Respuesta userFound de usuario encontrado
       message: "Login exitoso",
