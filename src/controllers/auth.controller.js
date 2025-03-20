@@ -103,18 +103,13 @@ export const profile = async (req, res) => {
 
 export const verifyToken = async (req, res) => {
   const { token } = req.cookies;
+  if (!token) return res.send(false);
 
-  if (!token) return res.status(401).json({ message: "No autorizado" });
-
-  jwt.verify(token, TOKEN_SECRET, async (err, user) => {
-    if (err)
-      return res.status(401).json({
-        message: "No autorizado",
-      });
-    console.error(err);
+  jwt.verify(token, TOKEN_SECRET, async (error, user) => {
+    if (error) return res.sendStatus(401);
 
     const userFound = await User.findById(user.id);
-    if (!userFound) return res.status(401).json({ message: "NO autorizado" });
+    if (!userFound) return res.sendStatus(401);
 
     return res.json({
       id: userFound._id,
