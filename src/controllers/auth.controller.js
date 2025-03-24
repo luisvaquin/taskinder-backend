@@ -4,37 +4,37 @@ import { createAccessToken } from "../libs/jwt.js";
 import jwt from "jsonwebtoken";
 import { TOKEN_SECRET } from "../config.js";
 
-// 🔹 REGISTRO
 export const register = async (req, res) => {
   const { username, email, password } = req.body;
   try {
-    // Validar si el correo ya está registrado
+    // Validación de campos
     const userFound = await User.findOne({ email });
     if (userFound)
       return res.status(400).json(["El correo ya está registrado"]);
 
-    // Encriptar la contraseña
+    // Encriptación de password
     const passwordHash = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, email, password: passwordHash });
-    const userSaved = await newUser.save();
 
-    // Generar token
-    const token = await createAccessToken({ id: userSaved._id });
-
-    // Configurar cookie de sesión segura
-    res.cookie("token", token, {
-      httpOnly: true, // Evita que JS en el frontend acceda a la cookie
-      secure: process.env.NODE_ENV === "production", // Solo en HTTPS en producción
-      sameSite: "Strict", // Previene ataques CSRF
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
+    const newUser = new User({
+      username,
+      email,
+      password: passwordHash,
     });
 
-    // Enviar datos del usuario
+    // Guardar en la base de datos
+    const userSaved = await newUser.save();
+
+    // Validación de token
+    const token = await createAccessToken({ id: userSaved._id });
+
+    // Enviar cookie y respuesta al cliente
+    res.cookie("token", token);
     return res.json({
       id: userSaved._id,
       username: userSaved.username,
       email: userSaved.email,
       createdAt: userSaved.createdAt,
+      updatedAt: userSaved.updatedAt,
     });
   } catch (e) {
     console.error(e);
@@ -42,76 +42,60 @@ export const register = async (req, res) => {
   }
 };
 
-// 🔹 LOGIN
 export const login = async (req, res) => {
   const { email, password } = req.body;
-  try {
-    // Buscar usuario en la base de datos
-    const userFound = await User.findOne({ email });
-    if (!userFound)
-      return res.status(400).json({ message: "No se encontró el email" });
 
-    // Comparar contraseña
+  try {
+    const userFound = await User.findOne({ email }); //Buscar correo en db
+    if (!userFound)
+      return res.status(400).json({
+        message: "no se encontro el email",
+      });
+
+    //Comparacion de contraseña con usuario
     const isMatch = await bcrypt.compare(password, userFound.password);
     if (!isMatch)
-      return res.status(400).json({ message: "Contraseña incorrecta" });
+      return res.status(400).json({
+        message: "Contraseña incorrecta",
+      });
 
-    // Generar token
-    const token = await createAccessToken({ id: userFound._id });
+    const token = await createAccessToken({ id: userFound._id }); //Validacion de token
 
-    // Configurar cookie con el token
+    res.cookie("token", token, {
+      httpOnly: true, // Protege la cookie de accesos desde JS
+      secure: true, // Requiere HTTPS (Netlify usa HTTPS)
+      sameSite: "None", // Permite compartir cookies entre distintos dominios
+      domain: ".taskinn.netlify.app", // NO es necesario si usas otro dominio en el backend
+      path: "/",
+    });
+
+    /* local
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
+      sameSite: "None", // Necesario si frontend y backend están en dominios distintos
+      domain: "localhost", // Ajusta esto según tu dominio real
+      path: "/",
+    });*/
+
+    res.json({
+      //Respuesta userFound de usuario encontrado
+      message: "Login exitoso",
+      message: { token },
     });
 
-    // Enviar datos del usuario
-    return res.json({
-      id: userFound._id,
-      username: userFound.username,
-      email: userFound.email,
-    });
+    console.log("Log exitoso", token);
   } catch (e) {
-    console.error(e);
-    return res.status(500).json({ message: "Error en el servidor" });
+    res.status(500).json({ message: error.message });
+    console.log(e);
   }
 };
 
-// 🔹 CERRAR SESIÓN
 export const logout = (req, res) => {
   res.cookie("token", "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "Strict",
-    expires: new Date(0), // Expira inmediatamente
+    expires: new Date(0),
   });
   return res.sendStatus(200);
-};
-
-// 🔹 VERIFICAR TOKEN
-export const verifyToken = async (req, res) => {
-  try {
-    const token = req.cookies.token;
-    if (!token) return res.status(401).json({ message: "No autorizado" });
-
-    jwt.verify(token, TOKEN_SECRET, async (error, decoded) => {
-      if (error) return res.status(403).json({ message: "Token inválido" });
-
-      const userFound = await User.findById(decoded.id);
-      if (!userFound)
-        return res.status(404).json({ message: "Usuario no encontrado" });
-
-      return res.json({
-        id: userFound._id,
-        username: userFound.username,
-        email: userFound.email,
-      });
-    });
-  } catch (e) {
-    return res.status(500).json({ message: "Error al verificar el token" });
-  }
 };
 
 export const profile = async (req, res) => {
@@ -128,5 +112,25 @@ export const profile = async (req, res) => {
     email: userFound.email,
     createdAt: userFound.createdAt,
     updatedAt: userFound.updatedAt,
+  });
+};
+
+//🔹 SYNA7DB5:00 06CB:CD41 Touchpad
+
+export const verifyToken = async (req, res) => {
+  const { token } = req.cookies;
+  if (!token) return res.send(false);
+
+  jwt.verify(token, TOKEN_SECRET, async (error, user) => {
+    if (error) return res.sendStatus(401);
+
+    const userFound = await User.findById(user.id);
+    if (!userFound) return res.sendStatus(401);
+
+    return res.json({
+      id: userFound._id,
+      username: userFound.username,
+      email: userFound.email,
+    });
   });
 };
